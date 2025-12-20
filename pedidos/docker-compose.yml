@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: alurafood-pedidos-db
+    environment:
+      - POSTGRES_DB=alurafood-orders
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - orders_db_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  orders_db_data:
