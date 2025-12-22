@@ -1,4 +1,4 @@
-# Microsserviços - AluraFood
+# Microsserviços
 
 Projeto desenvolvido para estudo de arquitetura de microsserviços com ecossistema Spring.
 
