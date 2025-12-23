@@ -1,27 +1,24 @@
 package com.myorg;
 
-import software.constructs.Construct;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ecs.Cluster;
+import software.constructs.Construct;
 
-public class VpcStack extends Stack {
+public class ClusterStack extends Stack {
 
-    private Vpc vpc;
+    private Cluster cluster;
 
-    public VpcStack(final Construct scope, final String id) {
-        this(scope, id, null);
+    public ClusterStack(final Construct scope, final String id, final Vpc vpc) {
+        this(scope, id, null, vpc);
     }
 
-    public VpcStack(final Construct scope, final String id, final StackProps props) {
+    public ClusterStack(final Construct scope, final String id, final StackProps props, final Vpc vpc) {
         super(scope, id, props);
 
-        vpc = Vpc.Builder.create(this, "Vpc-microsservice")
-                .maxAzs(3)
-                .build();
-
-        // Cluster cluster = Cluster.Builder.create(this, "MyCluster")
-        // .vpc(vpc).build();
+        this.cluster = Cluster.Builder.create(this, "MyCluster")
+                .vpc(vpc).build();
 
         // // Create a load-balanced Fargate service and make it public
         // ApplicationLoadBalancedFargateService.Builder.create(this,
@@ -38,7 +35,7 @@ public class VpcStack extends Stack {
         // .build();
     }
 
-    public Vpc getVpc() {
-        return vpc;
+    public Cluster getCluster() {
+        return cluster;
     }
 }
