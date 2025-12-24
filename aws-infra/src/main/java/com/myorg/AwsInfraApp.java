@@ -17,8 +17,11 @@ public class AwsInfraApp {
 
                 var clusterStack = new ClusterStack(app, "cluster-ms", vpcStack.getVpc());
                 clusterStack.addDependency(vpcStack);
+                var rdsStack = new RdsStack(app, "RDS", vpcStack.getVpc());
+                rdsStack.addDependency(vpcStack);
                 var serviceStack = new ServiceStack(app, "service", clusterStack.getCluster());
                 serviceStack.addDependency(clusterStack);
+                serviceStack.addDependency(rdsStack);
                 app.synth();
         }
 }
