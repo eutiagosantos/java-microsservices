@@ -26,50 +26,89 @@ import software.amazon.awscdk.services.rds.PostgresEngineVersion;
 import software.amazon.awscdk.services.rds.PostgresInstanceEngineProps;
 
 public class RdsStack extends Stack {
-    public RdsStack(final Construct scope, final String id, final Vpc vpc) {
-        this(scope, id, null, vpc);
-    }
+        public RdsStack(final Construct scope, final String id, final Vpc vpc) {
+                this(scope, id, null, vpc);
+        }
 
-    public RdsStack(final Construct scope, final String id, final StackProps props, final Vpc vpc) {
-        super(scope, id, props);
+        public RdsStack(final Construct scope, final String id, final StackProps props, final Vpc vpc) {
+                super(scope, id, props);
 
-        CfnParameter password = CfnParameter.Builder.create(this, "senha")
-                .type("String")
-                .description("Senha do banco de dados pedidos-ms")
-                .build();
+                CfnParameter password = CfnParameter.Builder.create(this, "senha")
+                                .type("String")
+                                .description("Senha do banco de dados pedidos-ms")
+                                .build();
 
-        ISecurityGroup iSecurityGroup = SecurityGroup.fromSecurityGroupId(this, "security",
-                vpc.getVpcDefaultSecurityGroup());
+                ISecurityGroup iSecurityGroup = SecurityGroup.Builder.create(this, "rds-sg")
+                                .vpc(vpc)
+                                .description("Security group for RDS instances")
+                                .build();
 
-        iSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(3306));
-        DatabaseInstance database = DatabaseInstance.Builder
-                .create(this, "Rds-pedidos")
-                .instanceIdentifier("pedido-db")
-                .engine(DatabaseInstanceEngine.postgres(PostgresInstanceEngineProps.builder()
-                        .version(PostgresEngineVersion.VER_18_1)
-                        .build()))
-                .vpc(vpc)
-                .credentials(Credentials.fromUsername("admin",
-                        CredentialsFromUsernameOptions.builder()
-                                .password(SecretValue.unsafePlainText(password.getValueAsString()))
-                                .build()))
-                .instanceType(InstanceType.of(InstanceClass.BURSTABLE2, InstanceSize.MICRO))
-                .multiAz(false)
-                .allocatedStorage(10)
-                .securityGroups(Collections.singletonList(iSecurityGroup))
-                .vpcSubnets(SubnetSelection.builder()
-                        .subnets(vpc.getPrivateSubnets())
-                        .build())
-                .build();
+                iSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(5432));
+                DatabaseInstance database = DatabaseInstance.Builder
+                                .create(this, "Rds-pedidos")
+                                .instanceIdentifier("pedido-db")
+                                .engine(DatabaseInstanceEngine.postgres(PostgresInstanceEngineProps.builder()
+                                                .version(PostgresEngineVersion.VER_18_1)
+                                                .build()))
+                                .vpc(vpc)
+                                .credentials(Credentials.fromUsername("admin",
+                                                CredentialsFromUsernameOptions.builder()
+                                                                .password(SecretValue.unsafePlainText(
+                                                                                password.getValueAsString()))
+                                                                .build()))
+                                .instanceType(InstanceType.of(InstanceClass.BURSTABLE2, InstanceSize.MICRO))
+                                .multiAz(false)
+                                .allocatedStorage(10)
+                                .securityGroups(Collections.singletonList(iSecurityGroup))
+                                .vpcSubnets(SubnetSelection.builder()
+                                                .subnets(vpc.getPrivateSubnets())
+                                                .build())
+                                .build();
 
-        CfnOutput.Builder.create(this, "pedidos-db-endpoint")
-                .exportName("pedidos-db-endpoint")
-                .value(database.getDbInstanceEndpointAddress())
-                .build();
+                CfnOutput.Builder.create(this, "pedidos-db-endpoint")
+                                .exportName("pedidos-db-endpoint")
+                                .value(database.getDbInstanceEndpointAddress())
+                                .build();
 
-        CfnOutput.Builder.create(this, "pedidos-db-senha")
-                .exportName("pedidos-db-senha")
-                .value(password.getValueAsString())
-                .build();
-    }
+                CfnOutput.Builder.create(this, "pedidos-db-senha")
+                                .exportName("pedidos-db-senha")
+                                .value(password.getValueAsString())
+                                .build();
+
+                CfnParameter passwordPagamentos = CfnParameter.Builder.create(this, "senha-pagamentos")
+                                .type("String")
+                                .description("Senha do banco de dados pagamentos-ms")
+                                .build();
+
+                DatabaseInstance databasePagamentos = DatabaseInstance.Builder
+                                .create(this, "Rds-pagamentos")
+                                .instanceIdentifier("pagamentos-db")
+                                .engine(DatabaseInstanceEngine.postgres(PostgresInstanceEngineProps.builder()
+                                                .version(PostgresEngineVersion.VER_18_1)
+                                                .build()))
+                                .vpc(vpc)
+                                .credentials(Credentials.fromUsername("admin",
+                                                CredentialsFromUsernameOptions.builder()
+                                                                .password(SecretValue.unsafePlainText(
+                                                                                passwordPagamentos.getValueAsString()))
+                                                                .build()))
+                                .instanceType(InstanceType.of(InstanceClass.BURSTABLE2, InstanceSize.MICRO))
+                                .multiAz(false)
+                                .allocatedStorage(10)
+                                .securityGroups(Collections.singletonList(iSecurityGroup))
+                                .vpcSubnets(SubnetSelection.builder()
+                                                .subnets(vpc.getPrivateSubnets())
+                                                .build())
+                                .build();
+
+                CfnOutput.Builder.create(this, "pagamentos-db-endpoint")
+                                .exportName("pagamentos-db-endpoint")
+                                .value(databasePagamentos.getDbInstanceEndpointAddress())
+                                .build();
+
+                CfnOutput.Builder.create(this, "pagamentos-db-senha")
+                                .exportName("pagamentos-db-senha")
+                                .value(passwordPagamentos.getValueAsString())
+                                .build();
+        }
 }

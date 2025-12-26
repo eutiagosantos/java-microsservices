@@ -27,7 +27,7 @@ public class ServiceStack extends Stack {
 
         autenticate.put("SPRING_DATASOURCE_USERNAME", "admin");
         autenticate.put("SPRING_DATASOURCE_PASSWORD", Fn.importValue("pedidos-db-senha"));
-        ApplicationLoadBalancedFargateService.Builder.create(this, "Fargate-ms")
+        ApplicationLoadBalancedFargateService.Builder.create(this, "Fargate-ms-pedidos")
                 .cluster(cluster)
                 .cpu(256)
                 .desiredCount(6)
@@ -37,6 +37,29 @@ public class ServiceStack extends Stack {
                         ApplicationLoadBalancedTaskImageOptions.builder()
                                 .environment(autenticate)
                                 .image(ContainerImage.fromRegistry("ctiagosantos/order-ms"))
+                                .containerPort(8080)
+                                .build())
+                .memoryLimitMiB(512)
+                .publicLoadBalancer(true)
+                .build();
+
+        Map<String, String> autenticatePagamentos = new HashMap<>();
+        autenticatePagamentos.put("SPRING_DATASOURCE_URL",
+                "jdbc:postgresql://" + Fn.importValue("pagamentos-db-endpoint")
+                        + ":5432/pagamentos-db?createDatabaseIfNotExist=true");
+
+        autenticatePagamentos.put("SPRING_DATASOURCE_USERNAME", "admin");
+        autenticatePagamentos.put("SPRING_DATASOURCE_PASSWORD", Fn.importValue("pagamentos-db-senha"));
+        ApplicationLoadBalancedFargateService.Builder.create(this, "Fargate-ms-pagamentos")
+                .cluster(cluster)
+                .cpu(256)
+                .desiredCount(6)
+                .listenerPort(8080)
+                .assignPublicIp(true)
+                .taskImageOptions(
+                        ApplicationLoadBalancedTaskImageOptions.builder()
+                                .environment(autenticatePagamentos)
+                                .image(ContainerImage.fromRegistry("ctiagosantos/payment-ms"))
                                 .containerPort(8080)
                                 .build())
                 .memoryLimitMiB(512)
