@@ -5,14 +5,19 @@ import software.constructs.Construct;
 import java.util.HashMap;
 import java.util.Map;
 
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.applicationautoscaling.EnableScalingProps;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.CpuUtilizationScalingProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
+import software.amazon.awscdk.services.ecs.MemoryUtilizationScalingProps;
+import software.amazon.awscdk.services.ecs.ScalableTaskCount;
 import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedFargateService;
 import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedTaskImageOptions;
 import software.amazon.awscdk.services.logs.LogGroup;
@@ -43,7 +48,8 @@ public class ServiceStack extends Stack {
                                 .removalPolicy(RemovalPolicy.DESTROY)
                                 .retention(RetentionDays.ONE_WEEK)
                                 .build();
-                ApplicationLoadBalancedFargateService.Builder.create(this, "Fargate-ms-pedidos")
+                ApplicationLoadBalancedFargateService orderBuild = ApplicationLoadBalancedFargateService.Builder
+                                .create(this, "Fargate-ms-pedidos")
                                 .cluster(cluster)
                                 .cpu(256)
                                 .desiredCount(3)
@@ -64,6 +70,22 @@ public class ServiceStack extends Stack {
                                 .publicLoadBalancer(true)
                                 .build();
 
+                ScalableTaskCount scalableTargetOrder = orderBuild.getService()
+                                .autoScaleTaskCount(EnableScalingProps.builder()
+                                                .minCapacity(1)
+                                                .maxCapacity(20)
+                                                .build());
+                scalableTargetOrder.scaleOnCpuUtilization("CpuScaling", CpuUtilizationScalingProps.builder()
+                                .targetUtilizationPercent(70)
+                                .scaleInCooldown(Duration.minutes(3))
+                                .scaleOutCooldown(Duration.minutes(2))
+                                .build());
+                scalableTargetOrder.scaleOnMemoryUtilization("MemoryScaling", MemoryUtilizationScalingProps.builder()
+                                .targetUtilizationPercent(65)
+                                .scaleInCooldown(Duration.minutes(3))
+                                .scaleOutCooldown(Duration.minutes(2))
+                                .build());
+
                 Map<String, String> autenticatePagamentos = new HashMap<>();
                 autenticatePagamentos.put("SPRING_DATASOURCE_URL",
                                 "jdbc:postgresql://" + Fn.importValue("pagamentos-db-endpoint")
@@ -71,7 +93,8 @@ public class ServiceStack extends Stack {
 
                 autenticatePagamentos.put("SPRING_DATASOURCE_USERNAME", "admin");
                 autenticatePagamentos.put("SPRING_DATASOURCE_PASSWORD", Fn.importValue("pagamentos-db-senha"));
-                ApplicationLoadBalancedFargateService.Builder.create(this, "Fargate-ms-pagamentos")
+                ApplicationLoadBalancedFargateService paymentsBuild = ApplicationLoadBalancedFargateService.Builder
+                                .create(this, "Fargate-ms-pagamentos")
                                 .cluster(cluster)
                                 .cpu(256)
                                 .desiredCount(3)
@@ -91,5 +114,21 @@ public class ServiceStack extends Stack {
                                 .memoryLimitMiB(512)
                                 .publicLoadBalancer(true)
                                 .build();
+
+                ScalableTaskCount scalableTargetPayments = paymentsBuild.getService()
+                                .autoScaleTaskCount(EnableScalingProps.builder()
+                                                .minCapacity(1)
+                                                .maxCapacity(20)
+                                                .build());
+                scalableTargetPayments.scaleOnCpuUtilization("CpuScaling", CpuUtilizationScalingProps.builder()
+                                .targetUtilizationPercent(70)
+                                .scaleInCooldown(Duration.minutes(3))
+                                .scaleOutCooldown(Duration.minutes(2))
+                                .build());
+                scalableTargetPayments.scaleOnMemoryUtilization("MemoryScaling", MemoryUtilizationScalingProps.builder()
+                                .targetUtilizationPercent(65)
+                                .scaleInCooldown(Duration.minutes(3))
+                                .scaleOutCooldown(Duration.minutes(2))
+                                .build());
         }
 }
