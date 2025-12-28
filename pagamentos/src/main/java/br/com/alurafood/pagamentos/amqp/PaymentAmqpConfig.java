@@ -13,9 +13,11 @@ import org.springframework.lang.NonNull;
 @Configuration
 public class PaymentAmqpConfig {
 
+    static final String queueName = "payments.completed";
+
     @Bean
     public Queue createQueue() {
-        return QueueBuilder.nonDurable("payments.completed").build();
+        return QueueBuilder.nonDurable(queueName).build();
     }
 
     @Bean
