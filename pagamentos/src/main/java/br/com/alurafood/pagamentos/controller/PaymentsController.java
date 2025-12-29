@@ -2,6 +2,8 @@ package br.com.alurafood.pagamentos.controller;
 
 import java.net.URI;
 
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -30,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class PaymentsController {
 
     private final PaymentsService paymentsService;
+    private final RabbitTemplate rabbitTemplate;
 
     @GetMapping
     public ResponseEntity<Page<PaymentsDto>> listAll(@PageableDefault(value = 10) Pageable pagination) {
@@ -48,6 +51,8 @@ public class PaymentsController {
             UriComponentsBuilder uriBuilder) {
         var payment = this.paymentsService.create(paymentsDto);
         URI endereco = uriBuilder.path("/api/v1/payments/{id}").buildAndExpand(payment.getId()).toUri();
+        Message message = new Message(("Created payment with id: " + payment.getId()).getBytes());
+        rabbitTemplate.send("payments.completed", message);
         return ResponseEntity.created(endereco).body(payment);
     }
 
