@@ -51,8 +51,7 @@ public class PaymentsController {
             UriComponentsBuilder uriBuilder) {
         var payment = this.paymentsService.create(paymentsDto);
         URI endereco = uriBuilder.path("/api/v1/payments/{id}").buildAndExpand(payment.getId()).toUri();
-        Message message = new Message(("Created payment with id: " + payment.getId()).getBytes());
-        rabbitTemplate.send("payments.completed", message);
+        rabbitTemplate.convertAndSend("payments.completed", payment);
         return ResponseEntity.created(endereco).body(payment);
     }
 
